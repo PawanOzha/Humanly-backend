@@ -1,0 +1,52 @@
+# built binaries
+/bin/
+/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# coverage and profiles
+*.out
+*.coverprofile
+coverage.html
+cpu.prof
+mem.prof
+
+# env files — keep the example, never the real ones
+.env
+.env.*
+!.env.example
+
+# secrets and keys
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+*-credentials.json
+service-account*.json
+secrets.json
+id_rsa
+id_ed25519
+
+# local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Go workspace (machine-local)
+go.work
+go.work.sum
+
+# misc
+.DS_Store
+Thumbs.db
+*.log
+tmp/
+.idea/
+.vscode/
+*.swp
+*~
