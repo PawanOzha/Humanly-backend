@@ -225,15 +225,7 @@ func (s *Server) googleStart(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, s.appURL()+"/login?error="+url.QueryEscape("Google sign-in didn't complete."), http.StatusFound)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     oauthCookie,
-		Value:    state,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   s.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   600,
-	})
+	http.SetCookie(w, s.cookie(oauthCookie, state, 600))
 	http.Redirect(w, r, s.Accounts.GoogleAuthURL(state), http.StatusFound)
 }
 
@@ -301,15 +293,7 @@ func (s *Server) sessionUser(r *http.Request) (account.User, account.Subscriptio
 }
 
 func (s *Server) setSession(w http.ResponseWriter, token string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     account.SessionCookie,
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   s.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int(account.SessionTTL.Seconds()),
-	})
+	s.setCookie(w, s.cookie(account.SessionCookie, token, int(account.SessionTTL.Seconds())))
 }
 
 func (s *Server) clearSession(w http.ResponseWriter) {
@@ -317,15 +301,44 @@ func (s *Server) clearSession(w http.ResponseWriter) {
 }
 
 func (s *Server) clearCookie(w http.ResponseWriter, name string) {
-	http.SetCookie(w, &http.Cookie{
+	s.setCookie(w, s.cookie(name, "", -1))
+}
+
+// cookie builds a session cookie. When Google returns to a different host than
+// the site, the cookie has to travel on that cross-site request.
+func (s *Server) cookie(name, value string, maxAge int) *http.Cookie {
+	secure, same := s.cookieSite()
+	return &http.Cookie{
 		Name:     name,
-		Value:    "",
+		Value:    value,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   s.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
-		MaxAge:   -1,
-	})
+		Secure:   secure,
+		SameSite: same,
+		MaxAge:   maxAge,
+	}
+}
+
+func (s *Server) setCookie(w http.ResponseWriter, c *http.Cookie) {
+	http.SetCookie(w, c)
+}
+
+func (s *Server) cookieSite() (secure bool, same http.SameSite) {
+	secure = s.CookieSecure
+	same = http.SameSiteLaxMode
+	if s.Accounts == nil {
+		return secure, same
+	}
+	raw := s.Accounts.GoogleRedirect()
+	ru, err := url.Parse(raw)
+	if err != nil || ru.Host == "" {
+		return secure, same
+	}
+	au, err := url.Parse(s.appOrigin())
+	if err != nil || au.Host == "" || strings.EqualFold(ru.Host, au.Host) {
+		return secure, same
+	}
+	return true, http.SameSiteNoneMode
 }
 
 func (s *Server) appURL() string {

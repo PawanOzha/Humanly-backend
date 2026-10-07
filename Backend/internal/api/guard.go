@@ -79,7 +79,7 @@ func (s *Server) secure(next http.Handler) http.Handler {
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Referrer-Policy", "no-referrer")
 		h.Set("Cache-Control", "no-store")
-		h.Set("Cross-Origin-Resource-Policy", "same-site")
+		h.Set("Cross-Origin-Resource-Policy", s.resourcePolicy(r))
 		if s.CookieSecure {
 			h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}
@@ -111,6 +111,15 @@ func (s *Server) appOrigin() string {
 		return ""
 	}
 	return u.Scheme + "://" + u.Host
+}
+
+// resourcePolicy lets the site read API responses when the API is on another host.
+func (s *Server) resourcePolicy(r *http.Request) string {
+	origin := r.Header.Get("Origin")
+	if origin != "" && s.allowOrigin(origin) && !strings.EqualFold(origin, s.appOrigin()) {
+		return "cross-origin"
+	}
+	return "same-site"
 }
 
 // publicMessage is what a caller may read about an error. Anything that is

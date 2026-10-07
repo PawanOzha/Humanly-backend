@@ -62,7 +62,7 @@ func New(store Store, cfg Config) *Service {
 		secret:   []byte(cfg.SessionSecret),
 		googleID: strings.TrimSpace(cfg.GoogleClientID),
 		googleS:  strings.TrimSpace(cfg.GoogleClientSecret),
-		redirect: strings.TrimSpace(cfg.GoogleRedirectURL),
+		redirect: strings.TrimRight(strings.TrimSpace(cfg.GoogleRedirectURL), "/"),
 		http:     &http.Client{Timeout: 12 * time.Second},
 	}
 }
@@ -158,6 +158,13 @@ func (s *Service) Refund(ctx context.Context, userID string, words int, period s
 		return ApplyRefund(sub, words, period), nil
 	})
 	return err
+}
+
+func (s *Service) GoogleRedirect() string {
+	if s == nil {
+		return ""
+	}
+	return s.redirect
 }
 
 func (s *Service) GoogleAuthURL(state string) string {

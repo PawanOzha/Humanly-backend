@@ -195,3 +195,29 @@ func TestSignupRejectsControlCharacters(t *testing.T) {
 		t.Fatalf("signup = %d", res.StatusCode)
 	}
 }
+
+func TestCookieSiteFollowsRedirectHost(t *testing.T) {
+	local := &Server{
+		AppURL: "http://localhost:3000",
+		Accounts: account.New(account.NewMemory(), account.Config{
+			SessionSecret:     "test-session-secret-value",
+			GoogleRedirectURL: "http://localhost:3000/api/v1/auth/google/callback",
+		}),
+	}
+	if secure, same := local.cookieSite(); secure || same != http.SameSiteLaxMode {
+		t.Fatalf("local cookie = secure %v same %v", secure, same)
+	}
+	remote := &Server{
+		AppURL: "http://localhost:3000",
+		Accounts: account.New(account.NewMemory(), account.Config{
+			SessionSecret:     "test-session-secret-value",
+			GoogleRedirectURL: "https://humanly-backend-84d5da.runex.cloud/api/v1/auth/google/callback/",
+		}),
+	}
+	if got := remote.Accounts.GoogleRedirect(); got != "https://humanly-backend-84d5da.runex.cloud/api/v1/auth/google/callback" {
+		t.Fatalf("redirect = %s", got)
+	}
+	if secure, same := remote.cookieSite(); !secure || same != http.SameSiteNoneMode {
+		t.Fatalf("remote cookie = secure %v same %v", secure, same)
+	}
+}

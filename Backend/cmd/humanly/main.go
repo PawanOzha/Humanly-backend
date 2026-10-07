@@ -93,8 +93,8 @@ func openAccounts(ctx context.Context, log *slog.Logger, appURL string) *account
 		secret = base64.RawURLEncoding.EncodeToString(buf)
 		log.Warn("SESSION_SECRET is empty; sessions reset when the server restarts")
 	}
-	redirect := env("GOOGLE_REDIRECT_URL", strings.TrimRight(appURL, "/")+"/api/v1/auth/google/callback")
-	log.Info("accounts ready", "google", strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID")) != "")
+	redirect := strings.TrimRight(env("GOOGLE_REDIRECT_URL", strings.TrimRight(appURL, "/")+"/api/v1/auth/google/callback"), "/")
+	log.Info("accounts ready", "google", strings.TrimSpace(os.Getenv("GOOGLE_CLIENT_ID")) != "", "redirect", redirect)
 	return account.New(db, account.Config{
 		SessionSecret:      secret,
 		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),

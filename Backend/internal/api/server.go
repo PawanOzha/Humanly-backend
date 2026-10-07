@@ -56,6 +56,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/auth/me", s.me)
 	mux.HandleFunc("GET /v1/auth/google", s.googleStart)
 	mux.HandleFunc("GET /v1/auth/google/callback", s.googleCallback)
+	// The site proxies this API under /api. Google must be able to call either path.
+	mux.HandleFunc("GET /api/v1/auth/google", s.googleStart)
+	mux.HandleFunc("GET /api/v1/auth/google/callback", s.googleCallback)
 	mux.HandleFunc("POST /v1/billing/plan", s.setPlan)
 	mux.HandleFunc("GET /v1/drafts", s.listDrafts)
 	mux.HandleFunc("POST /v1/drafts", s.createDraft)
@@ -290,7 +293,7 @@ func (s *Server) cors(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Vary", "Origin")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 			w.Header().Set("Access-Control-Max-Age", "600")
 		}
